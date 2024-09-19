@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 int mirror_index(int var, int change, int bound) {
-    // just a simple reflect function.
+    // simple mirroring
     int current_result = var + change;
 
     if (current_result < 0) {
@@ -37,6 +37,11 @@ extern "C" {
         float** F = (float**)malloc(M * sizeof(float*));
         for (int i = 0; i < M; ++i) {
             F[i] = (float*)malloc(N * sizeof(float));
+        }
+        // define F
+        float** IF = (float**)malloc(M * sizeof(float*));
+        for (int i = 0; i < M; ++i) {
+            IF[i] = (float*)malloc(N * sizeof(float));
         }
         // define S_sigma
         //std::vector<float> S_sigma(ksize,0);
@@ -79,10 +84,14 @@ extern "C" {
                 RJ[y][_x] = 0;
                 IJ[y][_x] = 0;
                 for (int _kernel = -ksize; _kernel<ksize+1;++_kernel){
-                    RJ[y][_x] += cos_wc_x[_x] * cos_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] \
-                    + sin_wc_x[_x] * sin_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] * (1?_kernel>0:-1);
-                    IJ[y][_x] += - cos_wc_x[_x] * cos_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] \
-                    + sin_wc_x[_x] * sin_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] * (1?_kernel>0:-1);
+                    RJ[y][_x] += cos_wc_x[_x] * \
+                    cos_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] \
+                    + sin_wc_x[_x] * \
+                    sin_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] * (1?_kernel>0:-1);
+                    IJ[y][_x] += - cos_wc_x[_x] * \
+                    sin_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] \
+                    + sin_wc_x[_x] * \
+                    cos_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] * (1?_kernel>0:-1);
                 }
             }
         }
@@ -91,11 +100,18 @@ extern "C" {
         for (int x = 0; x < N; ++x){
             for (int _y = 0; _y < M; ++_y){
                 F[_y][x] = 0;
+                IF[_y][x]  = 0;
                 for (int __kernel = - ksize; __kernel < ksize+1; ++__kernel){
                     F[_y][x] += cos_ws_y[_y] * S_sigma[std::abs(__kernel)] *\
                             (cos_s[std::abs(__kernel)] * RJ[mirror_index(_y,__kernel,M)][x] \
                            + sin_s[std::abs(__kernel)] * IJ[mirror_index(_y,__kernel,M)][x] * (1?__kernel>0:-1)) \
                               + sin_ws_y[_y] * S_sigma[std::abs(__kernel)] *\
+                            (sin_s[std::abs(__kernel)] * RJ[mirror_index(_y,__kernel,M)][x] * (1?__kernel>0:-1)\
+                           - cos_s[std::abs(__kernel)] * IJ[mirror_index(_y,__kernel,M)][x])  ;
+                    IF[_y][x] += sin_ws_y[_y] * S_sigma[std::abs(__kernel)] *\
+                            (cos_s[std::abs(__kernel)] * RJ[mirror_index(_y,__kernel,M)][x] \
+                           + sin_s[std::abs(__kernel)] * IJ[mirror_index(_y,__kernel,M)][x] * (1?__kernel>0:-1)) \
+                              - cos_ws_y[_y] * S_sigma[std::abs(__kernel)] *\
                             (sin_s[std::abs(__kernel)] * RJ[mirror_index(_y,__kernel,M)][x] * (1?__kernel>0:-1)\
                            - cos_s[std::abs(__kernel)] * IJ[mirror_index(_y,__kernel,M)][x])  ;
                            
@@ -106,17 +122,19 @@ extern "C" {
         for (int i = 0; i < M; ++i) {
             for (int j = 0; j < N; ++j) {
                 // send results towards original matrix
-                image[i * N + j] = F[i][j];
+                image[i * N + j] = std::sqrt(F[i][j] * F[i][j] + IF[i][j] * IF[i][j]);
             }
         }
        for (int i = 0; i < M; ++i) {
         free(F[i]); 
         free(RJ[i]); 
         free(IJ[i]);
+        free(IF[i]);
         }
         free(F); 
         free(RJ);
         free(IJ);
+        free(IF);
         free(cos_wc_x);
         free(sin_wc_x);
         free(cos_ws_y);
