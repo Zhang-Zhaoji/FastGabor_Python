@@ -2,14 +2,15 @@
 #include <stdio.h>
 
 int mirror_index(int var, int change, int bound) {
+    // just a simple reflect function.
     int current_result = var + change;
 
     if (current_result < 0) {
-        return -current_result - 1; // 镜像处理
+        return -current_result - 1; 
     } else if (current_result >= bound) {
-        return 2 * bound - 1 - current_result; // 镜像处理
+        return 2 * bound - 1 - current_result; 
     } else {
-        return current_result; // 在有效范围内，直接返回
+        return current_result; 
     }
 }
 extern "C" {
