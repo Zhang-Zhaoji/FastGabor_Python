@@ -15,5 +15,7 @@ I've used the -O3 optimization flag, and it works well. You might also want to e
 **Be Careful:** the the maximum value to be send to c++ code is 1, please normalize it before use.
 
 ## recommend parameters:
+
 Frequency = np.float32(np.pi**2/2)
+
 kernal_size = 8
