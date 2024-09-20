@@ -1,4 +1,5 @@
 import ctypes
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -48,10 +49,14 @@ def gabor_filter(gabor_lib,image, Orientation, Frequency,kernal_size):
 
 if __name__ == "__main__":
     gabor_lib = initialize_gabor_lib()
-    image = np.random.rand(120, 160).astype(np.float32)  # example matrix
+    #image = np.random.rand(120, 160).astype(np.float32)  # example matrix
+    image = cv2.imread("test_images\\circle.jpg")
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    image = cv2.resize(image, (image.shape[1]//1, image.shape[0]//1))
+    image /= 255
     store_image = np.copy(image)
-    Orientation = np.float32(np.pi /4)
-    Frequency = np.float32(2)
+    Orientation = np.float32(np.pi * 3/ 4)
+    Frequency = np.float32(2* np.pi**2/2.7)
     kernal_size = 8
     gabor_filter(gabor_lib,image,Orientation, Frequency, kernal_size)
     # get np.array pointer

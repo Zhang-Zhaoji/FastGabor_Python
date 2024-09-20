@@ -57,12 +57,12 @@ extern "C" {
         float w_c_theta = Frequency * std::cos(Orientation);
         float w_s_theta = Frequency * std::sin(Orientation);
         // initialize S_sigma function
-        for (int index = 0; index < ksize+1; ++index){
-            S_sigma[index] = std::exp(-index * index / (2 * sigma * sigma)) ; // gaussian_distance(index,0,sigma);
-            cos_c[index] = std::cos(index * w_c_theta);
-            sin_c[index] = std::sin(index * w_c_theta);
-            cos_s[index] = std::cos(index * w_s_theta);
-            sin_s[index] = std::sin(index * w_s_theta);
+        for (int index = 0; index < 2 * ksize+1; ++index){
+            S_sigma[index] = std::exp(-(index - ksize) * (index - ksize)/ (2 * sigma * sigma)) ; // gaussian_distance(index,0,sigma);
+            cos_c[index] = std::cos((index - ksize) * w_c_theta);
+            sin_c[index] = std::sin((index - ksize) * w_c_theta);
+            cos_s[index] = std::cos((index - ksize) * w_s_theta);
+            sin_s[index] = std::sin((index - ksize) * w_s_theta);
         }
         //define cos w_c_theta_x, sin w_c_theta_x; cos w_s_theta_y, sin w_s_theta_y;
         float *cos_wc_x = (float*)malloc(N * sizeof(float));
@@ -85,13 +85,13 @@ extern "C" {
                 IJ[y][_x] = 0;
                 for (int _kernel = -ksize; _kernel<ksize+1;++_kernel){
                     RJ[y][_x] += cos_wc_x[_x] * \
-                    cos_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] \
+                    cos_c[_kernel + ksize] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[_kernel + ksize] \
                     + sin_wc_x[_x] * \
-                    sin_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] * (1?_kernel>0:-1);
+                    sin_c[_kernel + ksize] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[_kernel + ksize];
                     IJ[y][_x] += - cos_wc_x[_x] * \
-                    sin_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] \
+                    sin_c[_kernel + ksize] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[_kernel + ksize] \
                     + sin_wc_x[_x] * \
-                    cos_c[std::abs(_kernel)] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[std::abs(_kernel)] * (1?_kernel>0:-1);
+                    cos_c[_kernel + ksize] * image[y * N + mirror_index(_x,_kernel,N)] * S_sigma[_kernel + ksize];
                 }
             }
         }
@@ -102,18 +102,18 @@ extern "C" {
                 F[_y][x] = 0;
                 IF[_y][x]  = 0;
                 for (int __kernel = - ksize; __kernel < ksize+1; ++__kernel){
-                    F[_y][x] += cos_ws_y[_y] * S_sigma[std::abs(__kernel)] *\
-                            (cos_s[std::abs(__kernel)] * RJ[mirror_index(_y,__kernel,M)][x] \
-                           + sin_s[std::abs(__kernel)] * IJ[mirror_index(_y,__kernel,M)][x] * (1?__kernel>0:-1)) \
-                              + sin_ws_y[_y] * S_sigma[std::abs(__kernel)] *\
-                            (sin_s[std::abs(__kernel)] * RJ[mirror_index(_y,__kernel,M)][x] * (1?__kernel>0:-1)\
-                           - cos_s[std::abs(__kernel)] * IJ[mirror_index(_y,__kernel,M)][x])  ;
-                    IF[_y][x] += sin_ws_y[_y] * S_sigma[std::abs(__kernel)] *\
-                            (cos_s[std::abs(__kernel)] * RJ[mirror_index(_y,__kernel,M)][x] \
-                           + sin_s[std::abs(__kernel)] * IJ[mirror_index(_y,__kernel,M)][x] * (1?__kernel>0:-1)) \
-                              - cos_ws_y[_y] * S_sigma[std::abs(__kernel)] *\
-                            (sin_s[std::abs(__kernel)] * RJ[mirror_index(_y,__kernel,M)][x] * (1?__kernel>0:-1)\
-                           - cos_s[std::abs(__kernel)] * IJ[mirror_index(_y,__kernel,M)][x])  ;
+                    F[_y][x] += cos_ws_y[_y] * S_sigma[__kernel + ksize] *\
+                            (cos_s[__kernel + ksize] * RJ[mirror_index(_y,__kernel,M)][x]) \
+                           + sin_s[__kernel + ksize] * IJ[mirror_index(_y,__kernel,M)][x]  \
+                              + sin_ws_y[_y] * S_sigma[__kernel + ksize] *\
+                            (sin_s[__kernel + ksize] * RJ[mirror_index(_y,__kernel,M)][x]\
+                           - cos_s[__kernel + ksize] * IJ[mirror_index(_y,__kernel,M)][x])  ;
+                    IF[_y][x] += sin_ws_y[_y] * S_sigma[__kernel + ksize] *\
+                            (cos_s[__kernel + ksize] * RJ[mirror_index(_y,__kernel,M)][x] \
+                           + sin_s[__kernel + ksize] * IJ[mirror_index(_y,__kernel,M)][x] ) \
+                              - cos_ws_y[_y] * S_sigma[__kernel + ksize] *\
+                            (sin_s[__kernel + ksize] * RJ[mirror_index(_y,__kernel,M)][x]\
+                           - cos_s[__kernel + ksize] * IJ[mirror_index(_y,__kernel,M)][x])  ;
                            
                 }
             }
